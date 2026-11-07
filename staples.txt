@@ -1,0 +1,11 @@
+# Lista de staples do Premodern (as mais jogadas).
+# Cole aqui os nomes das cartas, uma por linha, na ordem de popularidade.
+# Formatos aceitos (use o que for mais facil):
+#   Wasteland
+#   Wasteland 56% 2597          (nome, % dos decks, numero de decks)
+#   Wasteland;56;2597
+# Linhas que comecam com # sao ignoradas.
+# Exemplo (apague os #  e troque pela lista real):
+# Swords to Plowshares
+# Wasteland
+# Counterspell
