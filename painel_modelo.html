@@ -315,6 +315,13 @@ tbody tr:hover{background:var(--surface2)}
       </div>
 
       <div class="fgroup">
+        <label for="altaMin">Alta recente <output id="altaOut"></output></label>
+        <div class="seg" data-f="altaJan"><button type="button" data-v="7">Em 7 dias</button><button type="button" data-v="30">Em 30 dias</button></div>
+        <input id="altaMin" type="range" min="0" max="60" step="5">
+        <p class="help">Mostra só cartas que já subiram lá fora. A Liga costuma demorar a acompanhar.</p>
+      </div>
+
+      <div class="fgroup">
         <label class="chk"><input type="checkbox" id="semQueda"><span>Ocultar quedas fortes (25% ou mais em 30 dias)</span></label>
       </div>
 
@@ -368,6 +375,8 @@ tbody tr:hover{background:var(--surface2)}
               <option value="score:-1">Melhor sinal</option>
               <option value="pct:1">Mais perto da mínima</option>
               <option value="dd:-1">Mais longe da máxima</option>
+              <option value="ch7:-1">Maior alta em 7 dias</option>
+              <option value="ch30:-1">Maior alta em 30 dias</option>
               <option value="ch30:1">Maior queda em 30 dias</option>
               <option value="dif:1">Liga mais barata que o exterior</option>
               <option value="rep:1">Menos reprints</option>
@@ -447,7 +456,7 @@ const SIG={forte:{label:"Oportunidade forte",short:"Forte"},op:{label:"Oportunid
 
 let cards=[],hist={},byKey={},viewList=[],abertoKey=null,range="tudo";
 let store=jget("pm_store",{}),cfg=jget("pm_cfg",{});
-const defaultF=()=>({q:"",sinais:[],pmin:"5",pmax:"",pctMax:100,ddMin:0,semQueda:false,conf:[],eds:[],rar:[],rl:"todas",rep:"todas",fav:false,liga:false,preset:""});
+const defaultF=()=>({q:"",sinais:[],pmin:"5",pmax:"",pctMax:100,ddMin:0,altaMin:0,altaJan:"7",semQueda:false,conf:[],eds:[],rar:[],rl:"todas",rep:"todas",fav:false,liga:false,preset:""});
 let F=Object.assign(defaultF(),jget("pm_filtros",{}));
 ["sinais","conf","eds","rar"].forEach(k=>{if(!Array.isArray(F[k]))F[k]=[]});
 let sort=jget("pm_sort",{k:"score",d:-1});
@@ -467,7 +476,7 @@ function ligaCalc(c){
 }
 function calcM(c){
   const s=hist[c.key],cur=c.usd;
-  const m={score:null,cls:"sem",confKey:"sem",conf:"sem dados",why:[],pct:null,dd:null,disc:null,ch30:null,min:null,max:null,med:null,span:0,n:0};
+  const m={score:null,cls:"sem",confKey:"sem",conf:"sem dados",why:[],pct:null,dd:null,disc:null,ch30:null,ch7:null,min:null,max:null,med:null,span:0,n:0};
   if(s&&s.length>=3&&cur!=null){
     const v=s.map(x=>x[1]),srt=v.slice().sort((a,b)=>a-b);
     const mn=srt[0],mx=srt[srt.length-1],med=srt[Math.floor(srt.length/2)];
@@ -478,6 +487,8 @@ function calcM(c){
     const lastD=new Date(s[s.length-1][0]);let p30=null;
     for(let i=s.length-1;i>=0;i--){if((lastD-new Date(s[i][0]))/864e5>=30){p30=s[i][1];break}}
     if(p30)m.ch30=cur/p30-1;
+    let p7=null;for(let i=s.length-1;i>=0;i--){if((lastD-new Date(s[i][0]))/864e5>=7){p7=s[i][1];break}}
+    if(p7)m.ch7=cur/p7-1;
     if(span>=30){
       m.confKey=span<180?"baixa":span<365?"media":"alta";
       m.conf=span<180?"baixa":span<365?"média":"alta";
@@ -536,6 +547,7 @@ function passa(c){
   if(c.usd!=null){if(pmin!=null&&c.usd<pmin)return false;if(pmax!=null&&c.usd>pmax)return false}
   if(F.pctMax<100&&(m.pct==null||m.pct*100>F.pctMax))return false;
   if(F.ddMin>0&&(m.dd==null||m.dd*100<F.ddMin))return false;
+  if(F.altaMin>0){const v=F.altaJan==="30"?m.ch30:m.ch7;if(v==null||v*100<F.altaMin)return false}
   if(F.semQueda&&m.ch30!=null&&m.ch30<=-0.25)return false;
   if(F.conf.length&&F.conf.indexOf(m.confKey)<0)return false;
   if(F.eds.length&&F.eds.indexOf(c.ed)<0)return false;
@@ -552,7 +564,7 @@ function val(c,k){
   const m=c.m;
   switch(k){
     case"nome":return c.nome.toLowerCase();case"ed":return c.ed.toLowerCase();case"usd":return c.usd;
-    case"score":return m.score;case"pct":return m.pct;case"dd":return m.dd;case"ch30":return m.ch30;
+    case"score":return m.score;case"pct":return m.pct;case"dd":return m.dd;case"ch30":return m.ch30;case"ch7":return m.ch7;
     case"rep":return c.rep;case"dif":return ligaCalc(c).dif;
   }
   return null;
@@ -606,6 +618,7 @@ function linha(c){
    '<td>'+pill(c)+meter(c)+'</td>'+
    '<td class="r num hm '+pctCls(m)+'">'+pct0(m.pct)+'</td>'+
    '<td class="r num hm">'+(m.dd==null?"–":m.dd>0.004?"−"+Math.round(m.dd*100)+"%":"máx.")+'</td>'+
+   '<td class="r num hm '+(m.ch7!=null&&m.ch7>=0.1?"good":"")+'">'+sgn(m.ch7)+'</td>'+
    '<td class="r num hm '+(m.ch30!=null&&m.ch30<=-0.25?"bad":"")+'">'+sgn(m.ch30)+'</td>'+
    '<td class="hm">'+spark(c,96,28)+'</td>'+
    '<td class="r num hm">'+c.rep+'</td>'+
@@ -617,7 +630,7 @@ function th(k,label,cls){
 }
 function tabela(list){
   return'<div class="tablewrap"><table><thead><tr><th class="c-star"><span class="sr" aria-hidden="true"></span></th>'+
-    th("nome","Carta")+th("usd","Preço","r")+th("score","Sinal")+th("pct","Percentil","r hm")+th("dd","Vs. máxima","r hm")+th("ch30","30 dias","r hm")+
+    th("nome","Carta")+th("usd","Preço","r")+th("score","Sinal")+th("pct","Percentil","r hm")+th("dd","Vs. máxima","r hm")+th("ch7","7 dias","r hm")+th("ch30","30 dias","r hm")+
     '<th class="hm">Tendência</th>'+th("rep","Reprints","r hm")+th("dif","Liga vs. fora","r hm")+
     '</tr></thead><tbody>'+list.map(linha).join("")+'</tbody></table></div>';
 }
@@ -661,6 +674,7 @@ const PRESETS=[
   {id:"semrep",nome:"Oportunidades sem reprint",f:{sinais:["forte","op"],rep:"nenhum"}},
   {id:"rl",nome:"Reserved List",f:{rl:"so"}},
   {id:"minima",nome:"Perto da mínima",f:{pctMax:15}},
+  {id:"alta",nome:"Alta recente",f:{altaMin:10,altaJan:"7"}},
   {id:"calma",nome:"Sem queda forte recente",f:{semQueda:true}},
   {id:"fav",nome:"Favoritas",f:{fav:true}}
 ];
@@ -679,14 +693,15 @@ function renderEds(){
 }
 function contaAtivos(){
   let n=0;
-  if(F.q)n++;if(F.sinais.length)n++;if(F.pmax)n++;if(F.pctMax<100)n++;if(F.ddMin>0)n++;if(F.semQueda)n++;
+  if(F.q)n++;if(F.sinais.length)n++;if(F.pmax)n++;if(F.pctMax<100)n++;if(F.ddMin>0)n++;if(F.altaMin>0)n++;if(F.semQueda)n++;
   if(F.conf.length)n++;if(F.eds.length)n++;if(F.rar.length)n++;if(F.rl!=="todas")n++;if(F.rep!=="todas")n++;if(F.fav)n++;if(F.liga)n++;
   if((num(F.pmin)||0)!==5)n++;
   return n;
 }
 function syncUI(){
   const ae=document.activeElement,setv=(id,v)=>{const el=$(id);if(el&&el!==ae)el.value=v};
-  setv("q",F.q);setv("pmin",F.pmin);setv("pmax",F.pmax);setv("pctMax",F.pctMax);setv("ddMin",F.ddMin);
+  setv("q",F.q);setv("pmin",F.pmin);setv("pmax",F.pmax);setv("pctMax",F.pctMax);setv("ddMin",F.ddMin);setv("altaMin",F.altaMin);
+  $("altaOut").textContent=F.altaMin<=0?"sem limite":"pelo menos +"+F.altaMin+"% em "+F.altaJan+" dias";
   $("pctOut").textContent=F.pctMax>=100?"sem limite":"até "+F.pctMax+"%";
   $("ddOut").textContent=F.ddMin<=0?"sem limite":"pelo menos "+F.ddMin+"%";
   $("semQueda").checked=F.semQueda;$("fFav").checked=F.fav;$("fLiga").checked=F.liga;
@@ -724,6 +739,7 @@ $("rail").addEventListener("input",e=>{
     case"pmax":F.pmax=t.value;mudou();break;
     case"pctMax":F.pctMax=+t.value;mudou();break;
     case"ddMin":F.ddMin=+t.value;mudou();break;
+    case"altaMin":F.altaMin=+t.value;mudou();break;
     case"semQueda":F.semQueda=t.checked;mudou();break;
     case"fFav":F.fav=t.checked;mudou();break;
     case"fLiga":F.liga=t.checked;mudou();break;
@@ -739,7 +755,7 @@ $("viewSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(
 $("mais").addEventListener("click",()=>{limite+=60;render()});
 ["cambio","fator"].forEach(id=>$(id).addEventListener("input",function(){cfg[id]=this.value;saveCfg();cards.forEach(c=>{c.m=calcM(c)});render();if(abertoKey)atualizaDetalhe(false)}));
 
-const DIR0={nome:1,ed:1,usd:-1,score:-1,pct:1,dd:-1,ch30:1,rep:1,dif:1};
+const DIR0={nome:1,ed:1,usd:-1,score:-1,pct:1,dd:-1,ch7:-1,ch30:1,rep:1,dif:1};
 $("lista").addEventListener("click",e=>{
   const s=e.target.closest("[data-sort]");
   if(s){const k=s.dataset.sort;sort=sort.k===k?{k:k,d:-sort.d}:{k:k,d:DIR0[k]||-1};ls("set","pm_sort",JSON.stringify(sort));render();return}
@@ -792,7 +808,7 @@ function detalhe(c){
    (c.outra!=null&&c.usd!=null&&c.outra<c.usd?'<span class="mut">Edição mais barata: '+usd(c.outra)+'</span>':"")+'</div>'+
    '<div class="d-sig" id="dSig">'+sigHTML(c)+baixa+'</div>'+
    '<div class="sec"><h3>Histórico de preços</h3><div class="rng" id="rng" role="group" aria-label="Período do gráfico"><button type="button" class="chip" data-r="30">30 dias</button><button type="button" class="chip" data-r="90">90 dias</button><button type="button" class="chip" data-r="tudo">Tudo</button></div><div class="chartbox" id="chartbox"></div></div>'+
-   '<dl class="mets">'+met("Percentil",pct0(m.pct))+met("Abaixo da máxima",m.dd==null?"–":Math.max(0,Math.round(m.dd*100))+"%")+met("Abaixo da mediana",m.disc==null?"–":sgn(-m.disc).replace("+","")) +met("Em 30 dias",sgn(m.ch30))+
+   '<dl class="mets">'+met("Percentil",pct0(m.pct))+met("Abaixo da máxima",m.dd==null?"–":Math.max(0,Math.round(m.dd*100))+"%")+met("Abaixo da mediana",m.disc==null?"–":sgn(-m.disc).replace("+","")) +met("Em 7 dias",sgn(m.ch7))+met("Em 30 dias",sgn(m.ch30))+
      met("Mínima",usd(m.min))+met("Mediana",usd(m.med))+met("Máxima",usd(m.max))+met("Dias de histórico",m.n?Math.round(m.span):"–")+'</dl>'+
    '<div class="sec"><h3>Preços na Liga Magic</h3><div class="liga3">'+
      '<label>Atual (R$)<input type="text" inputmode="decimal" id="dAtual" value="'+esc(s.atual||"")+'" autocomplete="off"></label>'+
