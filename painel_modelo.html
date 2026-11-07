@@ -130,7 +130,7 @@ input[type=range]{width:100%;accent-color:var(--op-solid)}
 /* tabela */
 .tablewrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:560px}
-th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:middle}
+th,td{padding:9px 9px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:middle}
 tbody tr:last-child td{border-bottom:0}
 th{font-weight:600;font-size:12.5px;color:var(--muted);white-space:nowrap;padding-block:8px;background:var(--surface2)}
 th button{border:0;background:none;padding:0;font-weight:600;color:inherit;display:inline-flex;gap:4px;align-items:center}
@@ -141,6 +141,11 @@ th.r,td.r{text-align:right}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--surface2)}
 .nm{font-weight:600}
+.tdn{min-width:150px}
+.bdg:empty{display:none}
+.bdg{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0}
+.bdg .b{margin:0}
+.cx-badges .b{margin:0}
 .ed{color:var(--muted);font-size:12.5px}
 .c-star{width:36px;padding-right:0}
 .star{border:0;background:none;font-size:18px;line-height:1;color:var(--muted);padding:2px 4px}
@@ -149,6 +154,7 @@ tbody tr:hover{background:var(--surface2)}
 .px small,.sub{display:block;color:var(--muted);font-size:12.5px}
 .b{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:5px;background:var(--neutra-bg);color:var(--neutra);margin-left:6px;vertical-align:1px}
 .b.rl{background:var(--amber-bg);color:var(--amber)}
+.b.st{background:var(--op-bg);color:var(--op)}
 .b.w{background:var(--cara-bg);color:var(--cara)}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
 .pill i{font-style:normal;font-variant-numeric:tabular-nums;opacity:.85;font-weight:500}
@@ -160,7 +166,7 @@ tbody tr:hover{background:var(--surface2)}
 .meter u{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.55}
 .m-forte i{background:var(--forte-solid)} .m-op i{background:var(--op-solid)} .m-neutra i{background:var(--neutra-solid)} .m-cara i{background:var(--cara-solid)} .m-sem i{background:var(--sem-solid)}
 .good{color:var(--forte);font-weight:600}.bad{color:var(--cara);font-weight:600}.mut{color:var(--muted)}
-.spark{width:96px;height:28px;display:block}
+.spark{width:84px;height:28px;display:block}
 .spark polyline{fill:none;stroke:var(--op-solid);stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .spark circle{fill:var(--op-solid)}
 .more{display:flex;justify-content:center;padding:14px}
@@ -228,6 +234,7 @@ tbody tr:hover{background:var(--surface2)}
 .d-links a{color:var(--op)}
 
 /* responsivo */
+@media (min-width:1001px) and (max-width:1400px){.hs{display:none}}
 @media (max-width:1000px){
   .layout{grid-template-columns:minmax(0,1fr)}
   .only-m{display:inline-block}
@@ -335,6 +342,14 @@ tbody tr:hover{background:var(--surface2)}
         </div>
       </fieldset>
 
+      <fieldset class="fgroup" id="grpStaple">
+        <legend>Staples do formato</legend>
+        <div class="seg" data-f="staple"><button type="button" data-v="todas">Todas</button><button type="button" data-v="so">Só staples</button><button type="button" data-v="nao">Fora da lista</button></div>
+        <label for="stMin" id="stMinLb" style="display:flex;justify-content:space-between;gap:8px;font-weight:400">Presença mínima nos decks <output id="stOut"></output></label>
+        <input id="stMin" type="range" min="0" max="80" step="5">
+        <p class="help" id="stHelp"></p>
+      </fieldset>
+
       <fieldset class="fgroup">
         <legend>Reserved List</legend>
         <div class="seg" data-f="rl">
@@ -379,6 +394,7 @@ tbody tr:hover{background:var(--surface2)}
               <option value="ch30:-1">Maior alta em 30 dias</option>
               <option value="ch30:1">Maior queda em 30 dias</option>
               <option value="dif:1">Liga mais barata que o exterior</option>
+              <option value="st:1">Staples primeiro</option>
               <option value="rep:1">Menos reprints</option>
               <option value="usd:-1">Preço, maior primeiro</option>
               <option value="usd:1">Preço, menor primeiro</option>
@@ -410,6 +426,10 @@ tbody tr:hover{background:var(--surface2)}
         <button id="btnExp" class="btn" type="button">Exportar anotações</button>
         <label class="btn filebtn">Importar anotações<input type="file" id="fileImp" accept=".json,application/json"></label>
       </div>
+    </div>
+    <div>
+      <h2>Lista de staples</h2>
+      <p>A lista vem do arquivo <b>staples.txt</b> do repositório. Para atualizar, copie os nomes (e, se quiser, a porcentagem) de uma página de staples do Premodern, cole no arquivo e salve. O painel mostra o selo e permite filtrar na próxima atualização.</p>
     </div>
     <p class="leg">O sinal usa só o histórico de preços: onde o preço atual está em relação aos últimos meses. Ele não enxerga risco de reprint nem de banimento, e a confiança sobe com o tamanho do histórico. É uma ferramenta de triagem, não uma recomendação de investimento.</p>
   </section>
@@ -456,12 +476,12 @@ const SIG={forte:{label:"Oportunidade forte",short:"Forte"},op:{label:"Oportunid
 
 let cards=[],hist={},byKey={},viewList=[],abertoKey=null,range="tudo";
 let store=jget("pm_store",{}),cfg=jget("pm_cfg",{});
-const defaultF=()=>({q:"",sinais:[],pmin:"5",pmax:"",pctMax:100,ddMin:0,altaMin:0,altaJan:"7",semQueda:false,conf:[],eds:[],rar:[],rl:"todas",rep:"todas",fav:false,liga:false,preset:""});
+const defaultF=()=>({q:"",sinais:[],pmin:"5",pmax:"",pctMax:100,ddMin:0,altaMin:0,altaJan:"7",staple:"todas",stMin:0,semQueda:false,conf:[],eds:[],rar:[],rl:"todas",rep:"todas",fav:false,liga:false,preset:""});
 let F=Object.assign(defaultF(),jget("pm_filtros",{}));
 ["sinais","conf","eds","rar"].forEach(k=>{if(!Array.isArray(F[k]))F[k]=[]});
 let sort=jget("pm_sort",{k:"score",d:-1});
 let view=jget("pm_view",null)||(window.innerWidth<760?"cards":"table");
-let limite=60;
+let limite=60,temSt=false,temPct=false;
 
 const saveStore=()=>ls("set","pm_store",JSON.stringify(store));
 const saveCfg=()=>ls("set","pm_cfg",JSON.stringify(cfg));
@@ -520,7 +540,7 @@ function load(){
     key:(r.set||"")+"|"+r.nome,nome:r.nome,ed:r.edicao||r.set||"",set:r.set||"",rar:r.raridade||"",
     rl:String(r.reserved_list||"").toLowerCase()==="sim",usd:r.usd==null||r.usd===""?null:parseFloat(r.usd),
     outra:r.usd_mais_barata_outra_edicao===""||r.usd_mais_barata_outra_edicao==null?null:parseFloat(r.usd_mais_barata_outra_edicao),
-    rep:parseInt(r.reprints_pos_2003,10)||0,ult:r.ultimo_reprint||"",
+    rep:parseInt(r.reprints_pos_2003,10)||0,stRank:r.staple_rank===""||r.staple_rank==null?null:+r.staple_rank,stPct:r.staple_pct===""||r.staple_pct==null?null:+r.staple_pct,stDecks:r.staple_decks===""||r.staple_decks==null?null:+r.staple_decks,ult:r.ultimo_reprint||"",
     link:r.link_liga||("https://www.ligamagic.com.br/?view=cards/search&card="+encodeURIComponent(r.nome))
   }));
   cards.forEach(c=>{byKey[c.key]=c});
@@ -535,6 +555,9 @@ function load(){
     const dias=Math.round((new Date(D.ultima)-new Date(D.primeira))/864e5);
     if(dias<180){av.textContent="O histórico cobre "+dias+" dias (de "+ymd(D.primeira)+" a "+ymd(D.ultima)+"). Com menos de seis meses, o sinal tem confiança baixa e serve para triagem.";av.hidden=false}
   }
+  temSt=cards.some(c=>c.stRank!=null);temPct=cards.some(c=>c.stPct!=null);
+  $("stMin").hidden=$("stMinLb").hidden=!temPct;
+  $("stHelp").textContent=temSt?cards.filter(c=>c.stRank!=null).length+" cartas do painel estão na lista de staples.":"Nenhuma lista de staples carregada. Veja como adicionar no rodapé.";
   buildDyn();
 }
 
@@ -547,6 +570,9 @@ function passa(c){
   if(c.usd!=null){if(pmin!=null&&c.usd<pmin)return false;if(pmax!=null&&c.usd>pmax)return false}
   if(F.pctMax<100&&(m.pct==null||m.pct*100>F.pctMax))return false;
   if(F.ddMin>0&&(m.dd==null||m.dd*100<F.ddMin))return false;
+  if(F.staple=="so"&&c.stRank==null)return false;
+  if(F.staple=="nao"&&c.stRank!=null)return false;
+  if(F.stMin>0&&(c.stPct==null||c.stPct<F.stMin))return false;
   if(F.altaMin>0){const v=F.altaJan==="30"?m.ch30:m.ch7;if(v==null||v*100<F.altaMin)return false}
   if(F.semQueda&&m.ch30!=null&&m.ch30<=-0.25)return false;
   if(F.conf.length&&F.conf.indexOf(m.confKey)<0)return false;
@@ -564,7 +590,7 @@ function val(c,k){
   const m=c.m;
   switch(k){
     case"nome":return c.nome.toLowerCase();case"ed":return c.ed.toLowerCase();case"usd":return c.usd;
-    case"score":return m.score;case"pct":return m.pct;case"dd":return m.dd;case"ch30":return m.ch30;case"ch7":return m.ch7;
+    case"score":return m.score;case"pct":return m.pct;case"dd":return m.dd;case"ch30":return m.ch30;case"ch7":return m.ch7;case"st":return c.stRank;case"stpct":return c.stPct;
     case"rep":return c.rep;case"dif":return ligaCalc(c).dif;
   }
   return null;
@@ -599,6 +625,7 @@ function meter(c){
 function badges(c){
   let h="";
   if(c.rl)h+='<span class="b rl">Reserved List</span>';
+  if(c.stRank!=null)h+='<span class="b st" title="Está na lista de staples do formato'+(c.stPct!=null?", presente em "+c.stPct+"% dos decks":"")+'">Staple'+(c.stPct!=null?" "+Math.round(c.stPct)+"%":"")+'</span>';
   if(c.rep>0)h+='<span class="b w" title="Reprints depois de 2003'+(c.ult?", último em "+esc(c.ult.slice(0,4)):"")+'">'+c.rep+(c.rep===1?" reprint":" reprints")+'</span>';
   return h;
 }
@@ -613,14 +640,14 @@ function linha(c){
   const m=c.m;
   return'<tr data-k="'+esc(c.key)+'" tabindex="0">'+
    '<td class="c-star">'+star(c)+'</td>'+
-   '<td><div class="nm">'+esc(c.nome)+badges(c)+'</div><div class="ed">'+esc(c.ed)+(c.rar?", "+esc(RAR[c.rar]||c.rar):"")+'</div></td>'+
+   '<td class="tdn"><div class="nm">'+esc(c.nome)+'</div><div class="bdg">'+badges(c)+'</div><div class="ed">'+esc(c.ed)+(c.rar?", "+esc(RAR[c.rar]||c.rar):"")+'</div></td>'+
    '<td class="r num px">'+usd(c.usd)+'<small>'+brl(ref(c))+'</small></td>'+
    '<td>'+pill(c)+meter(c)+'</td>'+
    '<td class="r num hm '+pctCls(m)+'">'+pct0(m.pct)+'</td>'+
    '<td class="r num hm">'+(m.dd==null?"–":m.dd>0.004?"−"+Math.round(m.dd*100)+"%":"máx.")+'</td>'+
    '<td class="r num hm '+(m.ch7!=null&&m.ch7>=0.1?"good":"")+'">'+sgn(m.ch7)+'</td>'+
    '<td class="r num hm '+(m.ch30!=null&&m.ch30<=-0.25?"bad":"")+'">'+sgn(m.ch30)+'</td>'+
-   '<td class="hm">'+spark(c,96,28)+'</td>'+
+   '<td class="hm hs">'+spark(c,84,28)+'</td>'+
    '<td class="r num hm">'+c.rep+'</td>'+
    '<td class="r num hm">'+ligaTxt(c)+'</td></tr>';
 }
@@ -631,7 +658,7 @@ function th(k,label,cls){
 function tabela(list){
   return'<div class="tablewrap"><table><thead><tr><th class="c-star"><span class="sr" aria-hidden="true"></span></th>'+
     th("nome","Carta")+th("usd","Preço","r")+th("score","Sinal")+th("pct","Percentil","r hm")+th("dd","Vs. máxima","r hm")+th("ch7","7 dias","r hm")+th("ch30","30 dias","r hm")+
-    '<th class="hm">Tendência</th>'+th("rep","Reprints","r hm")+th("dif","Liga vs. fora","r hm")+
+    '<th class="hm hs">Tendência</th>'+th("rep","Reprints","r hm")+th("dif","Liga vs. fora","r hm")+
     '</tr></thead><tbody>'+list.map(linha).join("")+'</tbody></table></div>';
 }
 function cartao(c){
@@ -674,6 +701,7 @@ const PRESETS=[
   {id:"semrep",nome:"Oportunidades sem reprint",f:{sinais:["forte","op"],rep:"nenhum"}},
   {id:"rl",nome:"Reserved List",f:{rl:"so"}},
   {id:"minima",nome:"Perto da mínima",f:{pctMax:15}},
+  {id:"staples",nome:"Staples em oportunidade",f:{staple:"so",sinais:["forte","op"]}},
   {id:"alta",nome:"Alta recente",f:{altaMin:10,altaJan:"7"}},
   {id:"calma",nome:"Sem queda forte recente",f:{semQueda:true}},
   {id:"fav",nome:"Favoritas",f:{fav:true}}
@@ -693,14 +721,15 @@ function renderEds(){
 }
 function contaAtivos(){
   let n=0;
-  if(F.q)n++;if(F.sinais.length)n++;if(F.pmax)n++;if(F.pctMax<100)n++;if(F.ddMin>0)n++;if(F.altaMin>0)n++;if(F.semQueda)n++;
+  if(F.q)n++;if(F.sinais.length)n++;if(F.pmax)n++;if(F.pctMax<100)n++;if(F.ddMin>0)n++;if(F.altaMin>0)n++;if(F.staple!=="todas")n++;if(F.stMin>0)n++;if(F.semQueda)n++;
   if(F.conf.length)n++;if(F.eds.length)n++;if(F.rar.length)n++;if(F.rl!=="todas")n++;if(F.rep!=="todas")n++;if(F.fav)n++;if(F.liga)n++;
   if((num(F.pmin)||0)!==5)n++;
   return n;
 }
 function syncUI(){
   const ae=document.activeElement,setv=(id,v)=>{const el=$(id);if(el&&el!==ae)el.value=v};
-  setv("q",F.q);setv("pmin",F.pmin);setv("pmax",F.pmax);setv("pctMax",F.pctMax);setv("ddMin",F.ddMin);setv("altaMin",F.altaMin);
+  setv("q",F.q);setv("pmin",F.pmin);setv("pmax",F.pmax);setv("pctMax",F.pctMax);setv("ddMin",F.ddMin);setv("altaMin",F.altaMin);setv("stMin",F.stMin);
+  $("stOut").textContent=F.stMin<=0?"sem limite":"pelo menos "+F.stMin+"%";
   $("altaOut").textContent=F.altaMin<=0?"sem limite":"pelo menos +"+F.altaMin+"% em "+F.altaJan+" dias";
   $("pctOut").textContent=F.pctMax>=100?"sem limite":"até "+F.pctMax+"%";
   $("ddOut").textContent=F.ddMin<=0?"sem limite":"pelo menos "+F.ddMin+"%";
@@ -740,6 +769,7 @@ $("rail").addEventListener("input",e=>{
     case"pctMax":F.pctMax=+t.value;mudou();break;
     case"ddMin":F.ddMin=+t.value;mudou();break;
     case"altaMin":F.altaMin=+t.value;mudou();break;
+    case"stMin":F.stMin=+t.value;mudou();break;
     case"semQueda":F.semQueda=t.checked;mudou();break;
     case"fFav":F.fav=t.checked;mudou();break;
     case"fLiga":F.liga=t.checked;mudou();break;
@@ -809,7 +839,7 @@ function detalhe(c){
    '<div class="d-sig" id="dSig">'+sigHTML(c)+baixa+'</div>'+
    '<div class="sec"><h3>Histórico de preços</h3><div class="rng" id="rng" role="group" aria-label="Período do gráfico"><button type="button" class="chip" data-r="30">30 dias</button><button type="button" class="chip" data-r="90">90 dias</button><button type="button" class="chip" data-r="tudo">Tudo</button></div><div class="chartbox" id="chartbox"></div></div>'+
    '<dl class="mets">'+met("Percentil",pct0(m.pct))+met("Abaixo da máxima",m.dd==null?"–":Math.max(0,Math.round(m.dd*100))+"%")+met("Abaixo da mediana",m.disc==null?"–":sgn(-m.disc).replace("+","")) +met("Em 7 dias",sgn(m.ch7))+met("Em 30 dias",sgn(m.ch30))+
-     met("Mínima",usd(m.min))+met("Mediana",usd(m.med))+met("Máxima",usd(m.max))+met("Dias de histórico",m.n?Math.round(m.span):"–")+'</dl>'+
+     met("Mínima",usd(m.min))+met("Mediana",usd(m.med))+met("Máxima",usd(m.max))+met("Dias de histórico",m.n?Math.round(m.span):"–")+(c.stRank!=null?met("Staple do formato",c.stPct!=null?c.stPct+"% dos decks":"Sim"):"")+'</dl>'+
    '<div class="sec"><h3>Preços na Liga Magic</h3><div class="liga3">'+
      '<label>Atual (R$)<input type="text" inputmode="decimal" id="dAtual" value="'+esc(s.atual||"")+'" autocomplete="off"></label>'+
      '<label>Mínima histórica<input type="text" inputmode="decimal" id="dMin" value="'+esc(s.min||"")+'" autocomplete="off"></label>'+
