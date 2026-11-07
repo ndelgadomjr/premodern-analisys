@@ -1,11 +1,111 @@
-# Lista de staples do Premodern (as mais jogadas).
-# Cole aqui os nomes das cartas, uma por linha, na ordem de popularidade.
-# Formatos aceitos (use o que for mais facil):
-#   Wasteland
-#   Wasteland 56% 2597          (nome, % dos decks, numero de decks)
-#   Wasteland;56;2597
-# Linhas que comecam com # sao ignoradas.
-# Exemplo (apague os #  e troque pela lista real):
-# Swords to Plowshares
-# Wasteland
-# Counterspell
+# Staples do Premodern, a partir das 3 listas do MTGGoldfish (Commonly Played Cards: Overall, Creatures e Spells).
+# Uma carta por linha; a ordem so agrupa as listas (Overall, depois Creatures, depois Spells). Linhas com # sao ignoradas.
+
+# Overall
+Tormod's Crypt
+Swords to Plowshares
+Powder Keg
+Duress
+Counterspell
+Annul
+Hydroblast
+Naturalize
+Impulse
+Blue Elemental Blast
+Seal of Cleansing
+Phyrexian Furnace
+Engineered Plague
+Cabal Therapy
+Aura of Silence
+Smother
+Gush
+Foil
+Pyroblast
+Red Elemental Blast
+Portent
+Tsabo's Web
+Ray of Revelation
+Exalted Angel
+Chain of Vapor
+Cursed Scroll
+Disenchant
+Sylvan Library
+Brain Freeze
+Daze
+Parallax Wave
+Opt
+Meddling Mage
+Pyroclasm
+Flash of Insight
+Mogg Fanatic
+Tranquil Domain
+Call of the Herd
+Replenish
+Xantid Swarm
+Opalescence
+Thwart
+Stifle
+Dark Ritual
+Fact or Fiction
+Lightning Bolt
+Diabolic Edict
+Withered Wretch
+Vision Charm
+Phyrexian Dreadnought
+
+# Creatures
+Ravenous Rats
+Graveborn Muse
+Argothian Enchantress
+Grim Lavamancer
+Hypnotic Specter
+Terravore
+Psychatog
+Squee, Goblin Nabob
+Masticore
+Weathered Wayfarer
+Goblin Sharpshooter
+Jackal Pup
+Wall of Roots
+Birds of Paradise
+Ravenous Baloth
+Nantuko Shade
+Goblin Tinkerer
+Goblin Matron
+Goblin Warchief
+Goblin Piledriver
+Siege-Gang Commander
+Goblin Lackey
+Goblin Ringleader
+Gempalm Incinerator
+Wall of Blossoms
+Uktabi Orangutan
+Plaguebearer
+Nimble Mongoose
+Werebear
+Akroma, Angel of Wrath
+Ball Lightning
+Wild Mongrel
+Skirk Prospector
+Deranged Hermit
+Phantom Nishoba
+Krosan Tusker
+Nantuko Vigilante
+Genesis
+Monk Realist
+Basking Rootwalla
+Phyrexian Devourer
+Anurid Brushhopper
+Llanowar Elves
+Elvish Spirit Guide
+
+# Spells
+Gaea's Blessing
+Warmth
+Seal of Fire
+Incinerate
+Overload
+Essence Flare
+Cursed Totem
+Wild Growth
+Solitary Confinement
