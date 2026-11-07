@@ -20,6 +20,7 @@ import gzip
 import json
 import lzma
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -46,6 +47,7 @@ LOG_PATH = os.path.join(PASTA, "atualizar.log")
 MODELO = os.path.join(PASTA, "painel_modelo.html")
 PAINEL = os.path.join(PASTA, "painel.html")
 CSV_SAIDA = os.path.join(PASTA, "candidatas.csv")
+STAPLES_PATH = os.path.join(PASTA, "staples.txt")
 
 HEADERS = {"User-Agent": "premodern-screener/1.0", "Accept": "application/json"}
 MTGJSON_BASE = "https://mtgjson.com/api/v5/"
@@ -339,6 +341,45 @@ def reduzir_serie(pontos):
     return saida
 
 
+def carregar_staples():
+    """Le staples.txt (lista de cartas mais jogadas, colada a mao de um site de decks).
+    Formatos aceitos por linha (qualquer um):
+        Wasteland
+        Wasteland;56;2597          (nome; % de decks; n. de decks)
+        Wasteland<TAB>56%<TAB>2597
+        12. Wasteland 56% 2597
+    A ordem das linhas vira o ranking. Linhas com # sao comentarios.
+    Devolve {nome_minusculo: (ranking, percentual|None, decks|None)}."""
+    if not os.path.exists(STAPLES_PATH):
+        return {}
+    saida = {}
+    with open(STAPLES_PATH, encoding="utf-8-sig") as f:
+        for linha in f:
+            linha = linha.strip()
+            if not linha or linha.startswith("#"):
+                continue
+            linha = re.sub(r"^\d+\s*[.)]\s+", "", linha)          # "12. Carta"
+            linha = re.sub(r"^\d+\s*x\s+", "", linha, flags=re.I)   # "4x Carta"
+            pct = decks = None
+            if ";" in linha or "\t" in linha:
+                campos = [c.strip() for c in re.split(r"[;\t]", linha) if c.strip()]
+                nome, resto = campos[0], campos[1:]
+            else:
+                m = re.match(r"^(.*?)\s+(\d+(?:[.,]\d+)?)\s*%?(?:\s+(\d+))?$", linha)
+                nome, resto = (m.group(1), [m.group(2)] + ([m.group(3)] if m.group(3) else [])) if m else (linha, [])
+            try:
+                if len(resto) > 0:
+                    pct = float(resto[0].replace("%", "").replace(",", "."))
+                if len(resto) > 1:
+                    decks = int(float(resto[1].replace(".", "").replace(",", ".")))
+            except ValueError:
+                pct = decks = None
+            chave = nome.strip().lower()
+            if chave and chave not in saida:
+                saida[chave] = (len(saida) + 1, pct, decks)
+    return saida
+
+
 def gerar_saidas(con, cambio, piso):
     ref = con.execute("SELECT MAX(data) FROM precos WHERE usd IS NOT NULL").fetchone()[0]
     if ref is None:
@@ -374,8 +415,13 @@ def gerar_saidas(con, cambio, piso):
         if k not in escolhidas or r[7] > escolhidas[k][7]:
             escolhidas[k] = r
 
+    staples = carregar_staples()
+    achadas = set()
     cartas = []
     for (set_code, nome), r in escolhidas.items():
+        st = staples.get(nome.lower()) or staples.get(nome.split(" // ")[0].lower())
+        if st:
+            achadas.add(nome.lower())
         n_rep, ultimo = reprints.get(r[1], (0, ""))
         cartas.append({
             "sid": r[0], "nome": nome, "edicao": r[4], "set": set_code, "raridade": r[5],
@@ -384,7 +430,11 @@ def gerar_saidas(con, cambio, piso):
             "usd_mais_barata_outra_edicao": mais_barata.get(r[1], ""),
             "reprints_pos_2003": n_rep, "ultimo_reprint": ultimo or "",
             "link_liga": "https://www.ligamagic.com.br/?view=cards/search&card=" + quote_plus(nome),
+            "staple_rank": st[0] if st else "", "staple_pct": st[1] if st and st[1] is not None else "",
+            "staple_decks": st[2] if st and st[2] is not None else "",
         })
+    if staples:
+        log(f"Staples: {len(staples)} nomes no staples.txt, {len(achadas)} cartas casaram com o painel.")
     cartas.sort(key=lambda x: (x["reserved_list"] != "sim", x["reprints_pos_2003"], -x["usd"]))
 
     # historico das candidatas
@@ -414,7 +464,8 @@ def gerar_saidas(con, cambio, piso):
 
     datas = con.execute("SELECT COUNT(DISTINCT data), MIN(data), MAX(data) FROM precos").fetchone()
     campos_json = ["nome", "edicao", "set", "raridade", "reserved_list", "usd",
-                   "usd_mais_barata_outra_edicao", "reprints_pos_2003", "ultimo_reprint", "link_liga"]
+                   "usd_mais_barata_outra_edicao", "reprints_pos_2003", "ultimo_reprint", "link_liga",
+                   "staple_rank", "staple_pct", "staple_decks"]
     dados = {
         "gerado": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "cambio": round(cambio, 4), "n_cartas": len(cartas),
