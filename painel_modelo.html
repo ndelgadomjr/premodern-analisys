@@ -377,7 +377,7 @@ tbody tr:hover{background:var(--surface2)}
 
       <div class="fgroup">
         <label class="chk"><input type="checkbox" id="fFav"><span>Só favoritas</span></label>
-        <label class="chk"><input type="checkbox" id="fLiga"><span>Só com preço da Liga preenchido</span></label>
+        <label class="chk"><input type="checkbox" id="fLiga"><span>Só com preço da Liga ou do MYP preenchido</span></label>
       </div>
     </aside>
 
@@ -393,7 +393,7 @@ tbody tr:hover{background:var(--surface2)}
               <option value="ch7:-1">Maior alta em 7 dias</option>
               <option value="ch30:-1">Maior alta em 30 dias</option>
               <option value="ch30:1">Maior queda em 30 dias</option>
-              <option value="dif:1">Liga mais barata que o exterior</option>
+              <option value="dif:1">Brasil mais barato que o exterior</option>
               <option value="st:1">Staples primeiro</option>
               <option value="rep:1">Menos reprints</option>
               <option value="usd:-1">Preço, maior primeiro</option>
@@ -421,7 +421,7 @@ tbody tr:hover{background:var(--surface2)}
     </div>
     <div>
       <h2>Minhas anotações</h2>
-      <p>Preços da Liga, favoritas e notas ficam salvos só neste navegador. Para levar a outro aparelho, exporte aqui e importe lá.</p>
+      <p>Preços da Liga e do MYP Cards, favoritas e notas ficam salvos só neste navegador. Para levar a outro aparelho, exporte aqui e importe lá.</p>
       <div class="row">
         <button id="btnExp" class="btn" type="button">Exportar anotações</button>
         <label class="btn filebtn">Importar anotações<input type="file" id="fileImp" accept=".json,application/json"></label>
@@ -489,8 +489,9 @@ const saveF=()=>ls("set","pm_filtros",JSON.stringify(F));
 
 /* ---------- métricas ---------- */
 function ligaCalc(c){
-  const s=store[c.key]||{},a=num(s.atual),mi=num(s.min),ma=num(s.max),r=ref(c),o={ref:r,atual:a,min:mi,max:ma};
-  if(a!=null&&r)o.dif=a/r-1;
+  const s=store[c.key]||{},a=num(s.atual),mi=num(s.min),ma=num(s.max),r=ref(c),y=num(s.myp),o={ref:r,atual:a,min:mi,max:ma,myp:y};
+  const bs=[a,y].filter(x=>x!=null);o.melhor=bs.length?Math.min.apply(null,bs):null;
+  if(o.melhor!=null&&r){o.dif=o.melhor/r-1;o.difLiga=a!=null?a/r-1:null;o.difMyp=y!=null?y/r-1:null}
   if(a!=null&&mi!=null&&ma!=null){o.pos=clamp(ma>mi?(a-mi)/(ma-mi):0)}
   return o;
 }
@@ -583,7 +584,7 @@ function passa(c){
   if(F.rep==="nenhum"&&c.rep>0)return false;
   if(F.rep==="algum"&&c.rep===0)return false;
   if(F.fav&&!s.fav)return false;
-  if(F.liga&&ligaCalc(c).atual==null)return false;
+  if(F.liga&&ligaCalc(c).melhor==null)return false;
   return true;
 }
 function val(c,k){
@@ -658,7 +659,7 @@ function th(k,label,cls){
 function tabela(list){
   return'<div class="tablewrap"><table><thead><tr><th class="c-star"><span class="sr" aria-hidden="true"></span></th>'+
     th("nome","Carta")+th("usd","Preço","r")+th("score","Sinal")+th("pct","Percentil","r hm")+th("dd","Vs. máxima","r hm")+th("ch7","7 dias","r hm")+th("ch30","30 dias","r hm")+
-    '<th class="hm hs">Tendência</th>'+th("rep","Reprints","r hm")+th("dif","Liga vs. fora","r hm")+
+    '<th class="hm hs">Tendência</th>'+th("rep","Reprints","r hm")+th("dif","Brasil vs. fora","r hm")+
     '</tr></thead><tbody>'+list.map(linha).join("")+'</tbody></table></div>';
 }
 function cartao(c){
@@ -844,9 +845,14 @@ function detalhe(c){
      '<label>Atual (R$)<input type="text" inputmode="decimal" id="dAtual" value="'+esc(s.atual||"")+'" autocomplete="off"></label>'+
      '<label>Mínima histórica<input type="text" inputmode="decimal" id="dMin" value="'+esc(s.min||"")+'" autocomplete="off"></label>'+
      '<label>Máxima histórica<input type="text" inputmode="decimal" id="dMax" value="'+esc(s.max||"")+'" autocomplete="off"></label></div>'+
+     '<div class="liga3" style="margin-top:10px"><label>MYP Cards, atual (R$)<input type="text" inputmode="decimal" id="dMyp" value="'+esc(s.myp||"")+'" autocomplete="off"></label><label style="grid-column:span 2">Link da carta no MYP (opcional)<input type="text" id="dMypLink" value="'+esc(s.mypLink||"")+'" placeholder="https://mypcards.com/magic/produto/..." autocomplete="off"></label></div>'+
      '<div class="lres" id="lres">'+ligaRes(c)+'</div></div>'+
    '<div class="sec"><h3>Minhas notas</h3><textarea id="dNota" class="nota" placeholder="Por que esta carta? Quanto pagaria? Onde achei?">'+esc(nota)+'</textarea></div>'+
-   '<p class="d-links"><a href="'+esc(c.link)+'" target="_blank" rel="noopener noreferrer">Ver na Liga Magic</a></p>';
+   '<p class="d-links"><a href="'+esc(c.link)+'" target="_blank" rel="noopener noreferrer">Ver na Liga Magic</a> &nbsp; <a id="aMyp" href="'+esc(mypHref(c))+'" target="_blank" rel="noopener noreferrer">'+(/^https:\/\/(www\.)?mypcards\.com\//i.test((s.mypLink||"").trim())?"Ver no MYP Cards":"Buscar no MYP Cards")+'</a></p>';
+}
+function mypHref(c){
+  const l=((store[c.key]||{}).mypLink||"").trim();
+  return /^https:\/\/(www\.)?mypcards\.com\//i.test(l)?l:"https://mypcards.com/magic?ProdutoSearch%5Bmarca%5D=magic&ProdutoSearch%5Bquery%5D="+encodeURIComponent(c.nome).replace(/%20/g,"+");
 }
 function sigHTML(c){
   const m=c.m;
@@ -855,7 +861,9 @@ function sigHTML(c){
 }
 function ligaRes(c){
   const l=ligaCalc(c);let h="";
-  if(l.dif!=null)h+='<div>Liga em relação ao preço de fora: <span class="'+(l.dif<=0?"good":"bad")+'">'+sgn(l.dif)+'</span> <span class="mut">('+brl(l.atual)+" contra "+brl(l.ref)+')</span></div>';
+  const lin=(nome,v,d)=>v!=null&&d!=null?'<div>'+nome+' em relação ao preço de fora: <span class="'+(d<=0?"good":"bad")+'">'+sgn(d)+'</span> <span class="mut">('+brl(v)+" contra "+brl(l.ref)+')</span></div>':"";
+  h+=lin("Liga",l.atual,l.difLiga)+lin("MYP Cards",l.myp,l.difMyp);
+  if(l.atual!=null&&l.myp!=null)h+='<div class="mut">Mais barato: '+(l.myp<l.atual?"MYP Cards":l.myp>l.atual?"Liga":"empate")+'</div>';
   if(l.pos!=null)h+='<div class="bar"><i style="width:'+Math.round(l.pos*100)+'%"></i></div><div class="mut">Posição no histórico da Liga: '+Math.round(l.pos*100)+'%'+(l.pos<=0.2?", perto da mínima":"")+'</div>';
   return h||'<span class="mut">Preencha os campos para comparar com o preço de fora e com o histórico da Liga.</span>';
 }
@@ -916,8 +924,9 @@ $("dStar").addEventListener("click",()=>{if(abertoKey)favoritar(abertoKey)});
 let tRender=null;
 $("drawer").addEventListener("input",e=>{
   const t=e.target,k=abertoKey;if(!k)return;
-  const campo={dAtual:"atual",dMin:"min",dMax:"max",dNota:"nota"}[t.id];if(!campo)return;
+  const campo={dAtual:"atual",dMyp:"myp",dMypLink:"mypLink",dMin:"min",dMax:"max",dNota:"nota"}[t.id];if(!campo)return;
   store[k]=store[k]||{};store[k][campo]=t.value;saveStore();
+  if(campo==="mypLink"){const a=$("aMyp");if(a){a.href=mypHref(byKey[k]);a.textContent=/^https:\/\/(www\.)?mypcards\.com\//i.test(t.value.trim())?"Ver no MYP Cards":"Buscar no MYP Cards"}return}
   if(campo!=="nota"){byKey[k].m=calcM(byKey[k]);atualizaDetalhe(false);clearTimeout(tRender);tRender=setTimeout(render,350)}
 });
 document.addEventListener("keydown",e=>{
@@ -954,7 +963,7 @@ $("btnRes").addEventListener("click",()=>{
     const m=c.m,l=ligaCalc(c);
     return c.nome+" ("+c.ed+") | "+usd(c.usd)+" = "+brl(ref(c))+" | sinal: "+SIG[m.cls].label+(m.score!=null?" "+Math.round(m.score)+"/100":"")+", confiança "+m.conf+
       (m.pct!=null?" | percentil "+pct0(m.pct)+", "+Math.max(0,Math.round(m.dd*100))+"% abaixo da máxima, 30 dias "+sgn(m.ch30):"")+
-      (l.dif!=null?" | Liga vs. exterior "+sgn(l.dif):"")+" | reprints após 2003: "+c.rep+(c.rl?" | Reserved List":"")+((store[c.key]||{}).nota?" | nota: "+store[c.key].nota:"");
+      (l.difLiga!=null?" | Liga vs. exterior "+sgn(l.difLiga):"")+(l.difMyp!=null?" | MYP vs. exterior "+sgn(l.difMyp):"")+" | reprints após 2003: "+c.rep+(c.rl?" | Reserved List":"")+((store[c.key]||{}).nota?" | nota: "+store[c.key].nota:"");
   });
   $("resumo").value=out.length?out.join("\n"):"Marque cartas com a estrela para gerar o resumo.";
 });
