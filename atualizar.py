@@ -304,14 +304,22 @@ def precisa_mtgjson(con):
 
 # ---------------------------------------------------------------------- saidas
 def obter_cambio():
-    try:
-        d = json_get("https://economia.awesomeapi.com.br/json/last/USD-BRL")
-        cambio = float(d["USDBRL"]["bid"])
-        log(f"Cambio do dia (USD-BRL): {cambio:.4f}")
-        return cambio
-    except Exception as erro:
-        log(f"Nao consegui buscar o cambio ({erro}). Usando {CAMBIO_MANUAL}")
-        return CAMBIO_MANUAL
+    fontes = [
+        ("AwesomeAPI", "https://economia.awesomeapi.com.br/json/last/USD-BRL",
+         lambda d: float(d["USDBRL"]["bid"])),
+        ("Frankfurter", "https://api.frankfurter.app/latest?from=USD&to=BRL",
+         lambda d: float(d["rates"]["BRL"])),
+    ]
+    for nome, url, extrair in fontes:
+        try:
+            cambio = extrair(json_get(url))
+            if 2.0 < cambio < 15.0:
+                log(f"Cambio do dia (USD-BRL): {cambio:.4f} (fonte: {nome})")
+                return cambio
+        except Exception as erro:
+            log(f"Cambio via {nome} falhou: {erro}")
+    log(f"Nao consegui buscar o cambio. Usando {CAMBIO_MANUAL}")
+    return CAMBIO_MANUAL
 
 
 def reduzir_serie(pontos):
