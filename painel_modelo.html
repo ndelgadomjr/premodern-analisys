@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Premodern Buy &amp; Hold</title>
+<style>
+:root{
+  --bg:#f6f5f1;--surface:#fff;--text:#1c1b18;--muted:#6b6860;--line:#e3e0d8;
+  --accent:#8a5a1f;--accent-soft:#f3e8d6;--good:#1d7a46;--bad:#b3341f;--bar:#e9e5da;
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16150f;--surface:#201e17;--text:#efece3;--muted:#a09b8c;--line:#363327;
+    --accent:#e0b36e;--accent-soft:#3a2f1b;--good:#5fcf8f;--bad:#ff8a73;--bar:#34312a;color-scheme:dark;}
+}
+:root[data-theme="dark"]{
+  --bg:#16150f;--surface:#201e17;--text:#efece3;--muted:#a09b8c;--line:#363327;
+  --accent:#e0b36e;--accent-soft:#3a2f1b;--good:#5fcf8f;--bad:#ff8a73;--bar:#34312a;color-scheme:dark;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+input,select,button{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+input[type=number],input[type=text],input[type=search]{min-width:0}
+button{cursor:pointer;background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+button:hover{filter:brightness(.96)}
+.chk{flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--text)}
+.chk input{width:auto}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.count{color:var(--muted);margin:4px 2px 10px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.name{font-weight:700;font-size:16px;margin:0}
+.ed{color:var(--muted);font-size:13px}
+.star{background:none;border:none;font-size:20px;padding:0 2px;color:var(--muted);line-height:1}
+.star.on{color:var(--accent)}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.b{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bar);color:var(--muted)}
+.b.rl{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.b.warn{color:var(--bad)}
+.prices{display:flex;gap:16px}
+.p small{display:block;color:var(--muted);font-size:12px}
+.p strong{font-size:18px}
+.liga{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.liga input{width:100%}
+.res{font-size:14px;min-height:38px}
+.diff.good{color:var(--good);font-weight:600}
+.diff.bad{color:var(--bad);font-weight:600}
+.bar{height:8px;background:var(--bar);border-radius:99px;overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.lk{font-size:13px;color:var(--accent)}
+.empty{padding:40px 10px;text-align:center;color:var(--muted)}
+.sig{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:var(--bar);color:var(--muted)}
+.sig.f,.sig.o{background:var(--accent-soft);color:var(--good)}
+.sig.c{color:var(--bad)}
+.sig span{font-size:12px;font-weight:400}
+.why{font-size:12px;color:var(--muted);margin:4px 0}
+.spark{width:100%;height:34px;display:block}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
+textarea{width:100%;min-height:110px;margin-top:8px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Premodern Buy &amp; Hold</h1>
+  <p class="sub">Candidatas a compra, com preço lá fora em reais e comparação com o histórico da Liga.</p>
+
+  <div class="panel" id="loadPanel">
+    <div class="row">
+      <label>Arquivo candidatas.csv
+        <input type="file" id="file" accept=".csv,text/csv">
+      </label>
+      <label>Histórico de preços (opcional)<input type="file" id="fileH" accept=".csv,text/csv"></label>
+      <button id="demo" type="button">Ver com dados de exemplo</button>
+    </div>
+    <p class="hint">Gere o arquivo com o script <em>premodern_candidatas.py</em> e carregue aqui. Os arquivos ficam só no seu navegador. Seus preços da Liga e favoritas ficam salvos neste aparelho.</p>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <label>Câmbio (R$ por US$)<input type="number" id="cambio" step="0.01" value="5.50" style="width:110px"></label>
+      <label>Fator de custo<input type="number" id="fator" step="0.05" value="1.00" style="width:100px"></label>
+      <label>Piso (US$)<input type="number" id="piso" step="1" value="5" style="width:90px"></label>
+      <label>Buscar<input type="search" id="q" placeholder="nome da carta" style="width:170px"></label>
+      <label>Edição<select id="ed"><option value="">Todas</option></select></label>
+      <label>Ordenar por
+        <select id="ord">
+          <option value="sinal">Melhor sinal (histórico)</option>
+          <option value="risco">Menor risco de reprint</option>
+          <option value="pos">Mais perto da mínima (Liga)</option>
+          <option value="dif">Liga mais barata que o exterior</option>
+          <option value="usdd">Preço (maior primeiro)</option>
+          <option value="usda">Preço (menor primeiro)</option>
+          <option value="nome">Nome</option>
+        </select>
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="fRL"> Só Reserved List</label>
+      <label class="chk"><input type="checkbox" id="fNR"> Sem reprint após 2003</label>
+      <label class="chk"><input type="checkbox" id="fFav"> Só favoritas</label>
+      <label class="chk"><input type="checkbox" id="fLiga"> Só com preço da Liga</label>
+      <label class="chk"><input type="checkbox" id="fOp"> Só oportunidades</label>
+    </div>
+    <p class="hint">O fator de custo multiplica o preço de fora para simular frete e impostos (1,00 = só o câmbio). O sinal é uma ferramenta de triagem baseada só no histórico de preços: não considera risco de reprint nem banimento e não é recomendação de investimento.</p>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"><div class="empty">Carregue o arquivo candidatas.csv ou veja os dados de exemplo.</div></div>
+  <div class="panel" style="margin-top:14px">
+    <button id="btnRes" type="button">Gerar resumo das favoritas</button>
+    <p class="hint">Copie o texto e cole na conversa com o Claude para discutir a avaliação.</p>
+    <textarea id="resumo" readonly></textarea>
+  </div>
+</div>
+
+<!--PM_DATA-->
+<script>
+(function(){
+  var cards=[], store={}, hist={}, $=function(id){return document.getElementById(id)};
+
+  function ls(op,k,v){try{return op==="get"?localStorage.getItem(k):localStorage.setItem(k,v)}catch(e){return null}}
+  try{store=JSON.parse(ls("get","pm_store")||"{}")||{}}catch(e){store={}}
+  try{var c=JSON.parse(ls("get","pm_cfg")||"{}");if(c.cambio)$("cambio").value=c.cambio;if(c.fator)$("fator").value=c.fator;if(c.piso!=null)$("piso").value=c.piso}catch(e){}
+
+  function saveStore(){ls("set","pm_store",JSON.stringify(store))}
+  function saveCfg(){ls("set","pm_cfg",JSON.stringify({cambio:$("cambio").value,fator:$("fator").value,piso:$("piso").value}))}
+
+  function num(t){
+    t=String(t==null?"":t).replace("R$","").replace(/\s/g,"");
+    if(!t)return null;
+    if(t.indexOf(",")>-1)t=t.replace(/\./g,"").replace(",",".");
+    var n=parseFloat(t);return isNaN(n)?null:n;
+  }
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function brl(n){return n==null?"–":"R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function usd(n){return n==null?"–":"US$ "+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+  function parseCSV(text){
+    text=text.replace(/^\uFEFF/,"");
+    var rows=[],row=[],f="",q=false,i,ch;
+    for(i=0;i<text.length;i++){
+      ch=text[i];
+      if(q){
+        if(ch==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=ch;
+      }else if(ch==='"')q=true;
+      else if(ch===","){row.push(f);f=""}
+      else if(ch==="\n"||ch==="\r"){
+        if(ch==="\r"&&text[i+1]==="\n")i++;
+        row.push(f);f="";if(row.length>1||row[0]!=="")rows.push(row);row=[];
+      }else f+=ch;
+    }
+    if(f!==""||row.length){row.push(f);rows.push(row)}
+    if(!rows.length)return[];
+    var h=rows[0].map(function(x){return x.trim()});
+    return rows.slice(1).map(function(r){var o={};h.forEach(function(k,j){o[k]=r[j]!=null?r[j]:""});return o});
+  }
+
+  function load(rows){
+    cards=rows.filter(function(r){return r.nome}).map(function(r){
+      var k=(r.set||"")+"|"+r.nome;
+      if(!store[k]){
+        var a=r.liga_atual_brl,mi=r.liga_min_hist_brl,ma=r.liga_max_hist_brl;
+        if(a||mi||ma)store[k]={atual:a,min:mi,max:ma};
+      }
+      return{key:k,nome:r.nome,ed:r.edicao||r.set||"",set:r.set||"",rar:r.raridade||"",
+        rl:(r.reserved_list||"").toLowerCase()==="sim",usd:num(r.usd),
+        outra:num(r.usd_mais_barata_outra_edicao),rep:parseInt(r.reprints_pos_2003,10)||0,
+        ult:r.ultimo_reprint||"",link:r.link_liga||("https://www.ligamagic.com.br/?view=cards/search&card="+encodeURIComponent(r.nome))};
+    });
+    if(window.__demo){demoHist();window.__demo=0}
+    var eds={};cards.forEach(function(c){eds[c.ed]=1});
+    $("ed").innerHTML='<option value="">Todas</option>'+Object.keys(eds).sort().map(function(e){return'<option>'+esc(e)+'</option>'}).join("");
+    render();
+  }
+
+  function ref(c){return c.usd==null?null:c.usd*(parseFloat($("cambio").value)||0)*(parseFloat($("fator").value)||1)}
+  function calc(c){
+    var s=store[c.key]||{},a=num(s.atual),mi=num(s.min),ma=num(s.max),r=ref(c),o={ref:r,atual:a};
+    if(a!=null&&r)o.dif=a/r-1;
+    if(a!=null&&mi!=null&&ma!=null){var p=ma>mi?(a-mi)/(ma-mi):0;o.pos=Math.max(0,Math.min(1,p))}
+    return o;
+  }
+  function resHTML(c){
+    var o=calc(c),h=sigHTML(c);
+    if(o.dif!=null){
+      var cls=o.dif<=0?"good":"bad",sg=o.dif>0?"+":"";
+      h+='Liga vs. exterior: <span class="diff '+cls+'">'+sg+Math.round(o.dif*100)+'%</span>';
+    }
+    if(o.pos!=null){
+      h+='<div class="bar"><i style="width:'+Math.round(o.pos*100)+'%"></i></div>'+
+         '<small style="color:var(--muted)">Posição no histórico da Liga: '+Math.round(o.pos*100)+'%'+(o.pos<=0.2?" (perto da mínima)":"")+'</small>';
+    }
+    return h||'<small style="color:var(--muted)">Preencha os preços da Liga para ver a comparação.</small>';
+  }
+
+  function clamp(x){return Math.max(0,Math.min(1,x))}
+  function loadHist(rows){
+    hist={};
+    rows.forEach(function(r){var p=num(r.usd);if(p==null||!r.data)return;var k=(r.set||"")+"|"+r.nome;(hist[k]=hist[k]||[]).push([r.data,p])});
+    Object.keys(hist).forEach(function(k){hist[k].sort(function(a,b){return a[0]<b[0]?-1:1})});
+    render();
+  }
+  function demoHist(){
+    hist={};var t=Date.now();
+    cards.forEach(function(c,i){var s=[];for(var d=420;d>=0;d-=7){var f=1+0.3*Math.sin((d+i*47)/60)+(i%3===0&&d<45?-0.3*(1-d/45):0)+(i%3===1&&d<150?-0.1:0);s.push([new Date(t-d*864e5).toISOString().slice(0,10),Math.max(1,c.usd*f*1.1)])}hist[c.key]=s});
+  }
+  function signal(c){
+    var g={conf:"sem",score:null,why:[],label:"Sem dados suficientes",cls:"x"},s=hist[c.key],cur=c.usd;
+    if(s&&s.length>=3&&cur!=null){
+      var v=s.map(function(x){return x[1]}),srt=v.slice().sort(function(a,b){return a-b}),
+          mn=srt[0],mx=srt[srt.length-1],med=srt[Math.floor(srt.length/2)],
+          span=(new Date(s[s.length-1][0])-new Date(s[0][0]))/864e5,
+          pct=v.filter(function(x){return x<=cur}).length/v.length,dd=1-cur/mx,disc=(med-cur)/med;
+      if(span>=30){
+        g.conf=span<180?"baixa":span<365?"média":"alta";
+        g.score=100*(0.6*(1-pct)+0.25*clamp(dd/0.5)+0.15*clamp(disc/0.3));
+        g.why.push("percentil "+Math.round(pct*100)+"% em "+Math.round(span)+" dias",dd>0?Math.round(dd*100)+"% abaixo da máxima":"na máxima do período","mínima US$ "+mn.toFixed(2));
+        var lastD=new Date(s[s.length-1][0]),p30=null;
+        for(var i=s.length-1;i>=0;i--){if((lastD-new Date(s[i][0]))/864e5>=30){p30=s[i][1];break}}
+        if(p30&&cur/p30-1<=-0.25)g.why.push("caiu "+Math.round((1-cur/p30)*100)+"% em 30 dias: espere estabilizar");
+      }
+    }
+    if(g.score==null){
+      var st=store[c.key]||{},a=num(st.atual),mi=num(st.min),ma=num(st.max);
+      if(a!=null&&mi!=null&&ma!=null&&ma>mi){
+        var p=clamp((a-mi)/(ma-mi));g.conf="manual (Liga)";
+        g.score=100*(0.7*(1-p)+0.3*clamp((1-a/ma)/0.5));
+        g.why.push("posição "+Math.round(p*100)+"% no histórico da Liga");
+      }
+    }
+    if(g.score!=null){g.label=g.score>=70?"Oportunidade forte":g.score>=50?"Oportunidade":g.score>=30?"Neutra":"Cara vs. histórico";g.cls=g.score>=70?"f":g.score>=50?"o":g.score>=30?"n":"c"}
+    return g;
+  }
+  function spark(c){
+    var s=hist[c.key];if(!s||s.length<3)return"";
+    var v=s.map(function(x){return x[1]}),mn=Math.min.apply(null,v),mx=Math.max.apply(null,v),w=200,h=34,r=mx>mn?mx-mn:1;
+    var pts=v.map(function(y,i){return(i/(v.length-1)*w).toFixed(1)+","+(h-2-(y-mn)/r*(h-4)).toFixed(1)}).join(" ");
+    return'<svg class="spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline points="'+pts+'"/></svg>';
+  }
+  function sigHTML(c){
+    var g=signal(c);
+    return'<div class="sig '+g.cls+'"><strong>'+g.label+'</strong><span>'+(g.score!=null?Math.round(g.score)+"/100 · confiança "+g.conf:"envie o histórico ou preencha a Liga")+'</span></div>'+
+      (g.why.length?'<div class="why">'+esc(g.why.join(" · "))+'</div>':"")+spark(c);
+  }
+
+  function visible(){
+    var q=$("q").value.trim().toLowerCase(),ed=$("ed").value,piso=parseFloat($("piso").value)||0;
+    var list=cards.filter(function(c){
+      if(c.usd!=null&&c.usd<piso)return false;
+      if(q&&c.nome.toLowerCase().indexOf(q)<0)return false;
+      if(ed&&c.ed!==ed)return false;
+      if($("fRL").checked&&!c.rl)return false;
+      if($("fNR").checked&&c.rep>0)return false;
+      if($("fFav").checked&&!(store[c.key]&&store[c.key].fav))return false;
+      if($("fLiga").checked&&calc(c).atual==null)return false;
+      if($("fOp").checked&&!(signal(c).score>=50))return false;
+      return true;
+    });
+    var m=$("ord").value;
+    list.sort(function(a,b){
+      if(m==="nome")return a.nome.localeCompare(b.nome);
+      if(m==="usdd")return(b.usd||0)-(a.usd||0);
+      if(m==="usda")return(a.usd||0)-(b.usd||0);
+      if(m==="sinal"){var sa=signal(a).score,sb=signal(b).score;if(sa==null&&sb==null)return 0;if(sa==null)return 1;if(sb==null)return-1;return sb-sa}
+      if(m==="pos"||m==="dif"){
+        var x=calc(a)[m],y=calc(b)[m];
+        if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return-1;return x-y;
+      }
+      return(a.rl===b.rl?0:a.rl?-1:1)||(a.rep-b.rep)||((b.usd||0)-(a.usd||0));
+    });
+    return list;
+  }
+
+  function render(){
+    var list=visible();
+    $("count").textContent=cards.length?list.length+" de "+cards.length+" cartas":"";
+    if(!cards.length)return;
+    if(!list.length){$("grid").innerHTML='<div class="empty">Nenhuma carta com esses filtros.</div>';return}
+    $("grid").innerHTML=list.map(function(c){
+      var s=store[c.key]||{},o=ref(c);
+      return'<div class="card" data-k="'+esc(c.key)+'">'+
+        '<div class="top"><div><p class="name">'+esc(c.nome)+'</p><div class="ed">'+esc(c.ed)+(c.rar?" · "+esc(c.rar):"")+'</div></div>'+
+        '<button type="button" class="star'+(s.fav?" on":"")+'" data-act="fav" title="Favoritar">'+(s.fav?"★":"☆")+'</button></div>'+
+        '<div class="badges">'+(c.rl?'<span class="b rl">Reserved List</span>':"")+
+          '<span class="b'+(c.rep>0?" warn":"")+'">'+(c.rep>0?c.rep+" reprint(s) após 2003"+(c.ult?" · último "+esc(c.ult.slice(0,4)):""):"Sem reprint após 2003")+'</span></div>'+
+        '<div class="prices"><div class="p"><small>Exterior (US$)</small><strong>'+usd(c.usd)+'</strong></div>'+
+          '<div class="p"><small>Exterior em reais</small><strong>'+brl(o)+'</strong></div></div>'+
+        (c.outra!=null&&c.usd!=null&&c.outra<c.usd?'<div class="ed">Edição mais barata: '+usd(c.outra)+'</div>':"")+
+        '<div class="liga">'+
+          '<label>Liga atual<input type="text" inputmode="decimal" data-f="atual" value="'+esc(s.atual||"")+'" placeholder="R$"></label>'+
+          '<label>Mínima hist.<input type="text" inputmode="decimal" data-f="min" value="'+esc(s.min||"")+'" placeholder="R$"></label>'+
+          '<label>Máxima hist.<input type="text" inputmode="decimal" data-f="max" value="'+esc(s.max||"")+'" placeholder="R$"></label></div>'+
+        '<div class="res">'+resHTML(c)+'</div>'+
+        '<a class="lk" href="'+esc(c.link)+'" target="_blank" rel="noopener noreferrer">Ver na Liga Magic ↗</a></div>';
+    }).join("");
+  }
+
+  function find(k){for(var i=0;i<cards.length;i++)if(cards[i].key===k)return cards[i]}
+
+  $("grid").addEventListener("input",function(e){
+    var f=e.target.getAttribute("data-f");if(!f)return;
+    var card=e.target.closest(".card"),k=card.getAttribute("data-k");
+    store[k]=store[k]||{};store[k][f]=e.target.value;saveStore();
+    card.querySelector(".res").innerHTML=resHTML(find(k));
+  });
+  $("grid").addEventListener("change",function(e){if(e.target.getAttribute("data-f")&&($("ord").value==="pos"||$("ord").value==="dif"||$("fLiga").checked))render()});
+  $("grid").addEventListener("click",function(e){
+    if(e.target.getAttribute("data-act")!=="fav")return;
+    var k=e.target.closest(".card").getAttribute("data-k");
+    store[k]=store[k]||{};store[k].fav=!store[k].fav;saveStore();render();
+  });
+
+  ["q","ed","ord","fRL","fNR","fFav","fLiga","fOp"].forEach(function(id){$(id).addEventListener("input",render)});
+  ["cambio","fator","piso"].forEach(function(id){$(id).addEventListener("input",function(){saveCfg();render()})});
+
+  $("file").addEventListener("change",function(){
+    var f=this.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(){load(parseCSV(r.result))};r.readAsText(f,"utf-8");
+  });
+
+  $("fileH").addEventListener("change",function(){
+    var f=this.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(){loadHist(parseCSV(r.result))};r.readAsText(f,"utf-8");
+  });
+
+  $("btnRes").addEventListener("click",function(){
+    var out=cards.filter(function(c){return store[c.key]&&store[c.key].fav}).map(function(c){
+      var g=signal(c),o=calc(c);
+      return c.nome+" ("+c.ed+") | "+usd(c.usd)+" = "+brl(ref(c))+" | sinal: "+g.label+(g.score!=null?" "+Math.round(g.score)+"/100":"")+" | confiança: "+g.conf+" | "+g.why.join("; ")+(o.dif!=null?" | Liga vs exterior: "+Math.round(o.dif*100)+"%":"")+" | reprints após 2003: "+c.rep+(c.rl?" | Reserved List":"");
+    });
+    $("resumo").value=out.length?out.join("\n"):"Marque cartas com a estrela para gerar o resumo.";
+  });
+
+  $("demo").addEventListener("click",function(){window.__demo=1;
+    load([
+      {nome:"Wasteland",edicao:"Tempest",set:"tmp",raridade:"rare",reserved_list:"nao",usd:"30",usd_mais_barata_outra_edicao:"30",reprints_pos_2003:"0"},
+      {nome:"Force of Will",edicao:"Alliances",set:"all",raridade:"uncommon",reserved_list:"nao",usd:"80",usd_mais_barata_outra_edicao:"60",reprints_pos_2003:"2",ultimo_reprint:"2018-03-16"},
+      {nome:"Gaea's Cradle",edicao:"Urza's Saga",set:"usg",raridade:"rare",reserved_list:"sim",usd:"250",usd_mais_barata_outra_edicao:"250",reprints_pos_2003:"0"},
+      {nome:"Mother of Runes",edicao:"Urza's Legacy",set:"ulg",raridade:"rare",reserved_list:"nao",usd:"12",usd_mais_barata_outra_edicao:"6",reprints_pos_2003:"1",ultimo_reprint:"2009-07-17"},
+      {nome:"Volrath's Stronghold",edicao:"Stronghold",set:"sth",raridade:"rare",reserved_list:"sim",usd:"45",usd_mais_barata_outra_edicao:"45",reprints_pos_2003:"0"},
+      {nome:"Cabal Therapy",edicao:"Judgment",set:"jud",raridade:"uncommon",reserved_list:"nao",usd:"18",usd_mais_barata_outra_edicao:"9",reprints_pos_2003:"1",ultimo_reprint:"2014-06-20"}
+    ]);
+  });
+
+  if(window.PM_DATA){
+    var D=window.PM_DATA;
+    if(D.cambio&&!ls("get","pm_cfg"))$("cambio").value=D.cambio;
+    load(D.c||[]);
+    hist=D.h||{};
+    $("loadPanel").innerHTML='<p class="hint" style="margin:0">Dados de '+esc(D.gerado||"")+' \u00b7 '+(D.n_cartas||0)+' cartas \u00b7 hist\u00f3rico de pre\u00e7os: '+(D.n_datas||0)+' datas ('+esc(D.primeira||"")+' a '+esc(D.ultima||"")+'). Para atualizar, rode o iniciar.bat.</p>';
+    render();
+  }
+})();
+</script>
+</body>
+</html>
